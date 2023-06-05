@@ -97,7 +97,7 @@ for transform in poses:
 
 points = [geometry.Point(pose.position.x, pose.position.y) for pose in global_poses.poses]
 
-concave_hull, edge_points = alpha_shape(points, alpha=1.87)
+concave_hull, edge_points = alpha_shape(points, alpha=0.4)
 
 print(concave_hull)
 
