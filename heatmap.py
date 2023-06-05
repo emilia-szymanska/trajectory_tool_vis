@@ -7,6 +7,7 @@ import tf
 from tf.transformations import euler_from_quaternion
 from geometry_msgs.msg import PoseArray, Pose, Quaternion, Point
 import matplotlib.pyplot as plt
+from math import tan
 
 def read_csv(filename):
     csvfile = open(filename)
@@ -71,8 +72,11 @@ grid_size = np.array([50.0, 50.0])  # size of the grid (width, height)
 num_cells = (grid_size / grid_cell_size).astype(int)
 grid = np.zeros(num_cells, dtype=int)
 
-robot_width = 1.0  # width of the robot
-robot_length = 2.0  # length of the robot
+fov_hor = 2.27
+fov_ver = 0.52
+height = 3.0
+robot_width = 2.0*height*tan(fov_hor/2)
+robot_length = 2.0*height*tan(fov_ver/2)
 
 p0 = (5, 40, 0.0)
 q0 = (0.0, 0.0, -0.125, 1)
