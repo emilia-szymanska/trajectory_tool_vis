@@ -56,7 +56,7 @@ def update_grid(grid, robot_width, robot_length, robot_position, robot_orientati
             ])
             cell = Polygon(cell_corners)
             if robot.intersects(cell):
-                grid[j, i] += 1
+                grid[j, i] = 1
 
 def plot_grid(grid):
     plt.figure(figsize=(6,6)) # size of the figure
@@ -85,7 +85,7 @@ converted = tf.transformations.concatenate_matrices(
         tf.transformations.quaternion_matrix(q0)
     )
 
-poses = read_csv("test.csv")
+poses = read_csv("smoothed.csv")
 
 global_poses = PoseArray()
 for transform in poses:
@@ -95,7 +95,9 @@ for transform in poses:
     topush.position = Point(*tf.transformations.translation_from_matrix(converted))
     global_poses.poses.append(topush)
 
-for pose in global_poses.poses:
+for i, pose in enumerate(global_poses.poses):
+    if i >= 200:
+        break
     position = np.array([pose.position.x, pose.position.y])
     quaternion = (pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w)
     euler = euler_from_quaternion(quaternion)
