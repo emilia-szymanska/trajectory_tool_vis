@@ -85,15 +85,42 @@ converted = tf.transformations.concatenate_matrices(
         tf.transformations.quaternion_matrix(q0)
     )
 
-poses = read_csv("test.csv")
+poses = read_csv("unsmoothed.csv")
 
+n = 10
 global_poses = PoseArray()
-for transform in poses:
+for i, transform in enumerate(poses):
     converted = converted @ transform
     topush = Pose()
     topush.orientation = Quaternion(*tf.transformations.quaternion_from_matrix(converted))
     topush.position = Point(*tf.transformations.translation_from_matrix(converted))
+    
+    if i > 0 and topush.orientation != global_poses.poses[-1].orientation:
+        pose1 = global_poses.poses[-1]
+        q1 = [pose1.orientation.x, pose1.orientation.y, pose1.orientation.z, pose1.orientation.w]
+        q2 = [topush.orientation.x, topush.orientation.y, topush.orientation.z, topush.orientation.w]
+
+        # interpolate positions and orientations separately
+        for i in range(n+1):
+            t = float(i) / float(n+1)  # interpolation factor
+
+            # spherical linear interpolation for orientation
+            q = tf.transformations.quaternion_slerp(q1, q2, t)
+
+            # create a Pose message
+            pose_tmp = Pose()
+            pose_tmp.position.x = topush.position.x
+            pose_tmp.position.y = topush.position.y
+            pose_tmp.position.z = topush.position.z
+            pose_tmp.orientation.x = q[0]
+            pose_tmp.orientation.y = q[1]
+            pose_tmp.orientation.z = q[2]
+            pose_tmp.orientation.w = q[3]
+
+            global_poses.poses.append(pose_tmp)
     global_poses.poses.append(topush)
+
+# print(global_poses.poses)
 
 for pose in global_poses.poses:
     position = np.array([pose.position.x, pose.position.y])
