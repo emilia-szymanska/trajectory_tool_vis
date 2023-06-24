@@ -58,6 +58,12 @@ def update_grid(grid, robot_width, robot_length, robot_position, robot_orientati
             if robot.intersects(cell):
                 grid[j, i] += 1
 
+def update_path(grid, position):
+    x = np.floor(np.min(position[0], axis=0) / grid_cell_size).astype(int)
+    y = np.floor(np.min(position[1], axis=0) / grid_cell_size).astype(int)
+    if 0 <= x < grid.shape[0] and 0 <= y < grid.shape[1]:
+        grid[y-4:y+4, x-4:x+4] = 50
+
 def plot_grid(grid):
     plt.figure(figsize=(6,6)) # size of the figure
     plt.imshow(grid, cmap='hot', interpolation='nearest')
@@ -127,6 +133,7 @@ for pose in global_poses.poses:
     quaternion = (pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w)
     euler = euler_from_quaternion(quaternion)
     yaw = euler[2]
+    update_path(grid, position)
     update_grid(grid, robot_width, robot_length, position, yaw)
 
 plot_grid(grid)
