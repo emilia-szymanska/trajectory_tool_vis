@@ -8,6 +8,7 @@ from tf.transformations import euler_from_quaternion
 from geometry_msgs.msg import PoseArray, Pose, Quaternion, Point
 import matplotlib.pyplot as plt
 from math import tan
+from tqdm import tqdm
 
 def read_csv(filename):
     csvfile = open(filename)
@@ -85,7 +86,7 @@ robot_width = 2.0*height*tan(fov_hor/2)
 robot_length = 2.0*height*tan(fov_ver/2)
 
 p0 = (5, 40, 0.0)
-q0 = (0.0, 0.0, -0.125, 1)
+q0 = (0.0, 0.0, -0.123, 1)
 converted = tf.transformations.concatenate_matrices(
         tf.transformations.translation_matrix(p0),
         tf.transformations.quaternion_matrix(q0)
@@ -128,7 +129,7 @@ for i, transform in enumerate(poses):
 
 # print(global_poses.poses)
 
-for pose in global_poses.poses:
+for pose in tqdm(global_poses.poses):
     position = np.array([pose.position.x, pose.position.y])
     quaternion = (pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w)
     euler = euler_from_quaternion(quaternion)
@@ -136,4 +137,9 @@ for pose in global_poses.poses:
     update_path(grid, position)
     update_grid(grid, robot_width, robot_length, position, yaw)
 
+cropped = grid[80:400, 100:440]
+print(f"Zero: {np.count_nonzero(cropped==0)}")
+print(f"Non zero: {np.count_nonzero(cropped)}")
+print(f"Total: {cropped.size}")
+print(f"Coverage {100 * round(np.count_nonzero(cropped) / cropped.size, 6)}%")
 plot_grid(grid)

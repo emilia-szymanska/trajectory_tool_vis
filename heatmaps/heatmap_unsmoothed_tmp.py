@@ -8,6 +8,7 @@ from tf.transformations import euler_from_quaternion
 from geometry_msgs.msg import PoseArray, Pose, Quaternion, Point
 import matplotlib.pyplot as plt
 from math import tan
+from tqdm import tqdm
 
 def read_csv(filename):
     csvfile = open(filename)
@@ -62,8 +63,7 @@ def update_path(grid, position):
     x = np.floor(np.min(position[0], axis=0) / grid_cell_size).astype(int)
     y = np.floor(np.min(position[1], axis=0) / grid_cell_size).astype(int)
     if 0 <= x < grid.shape[0] and 0 <= y < grid.shape[1]:
-        grid[y-4:y+4, x-4:x+4] = 50
-        # grid[y-2:y+2, x-2:x+2] = 50
+        grid[y-4:y+4, x-4:x+4] = 33
 
 def plot_grid(grid):
     plt.figure(figsize=(6,6)) # size of the figure
@@ -79,37 +79,79 @@ grid_size = np.array([50.0, 50.0])  # size of the grid (width, height)
 num_cells = (grid_size / grid_cell_size).astype(int)
 grid = np.zeros(num_cells, dtype=int)
 
-fov_hor = 2.27
+fov_hor = 1.0
 fov_ver = 0.52
 height = 3.0
 robot_width = 2.0*height*tan(fov_hor/2)
 robot_length = 2.0*height*tan(fov_ver/2)
 
 p0 = (5, 40, 0.0)
-q0 = (0.0, 0.0, -0.125, 1)
+q0 = (0.0, 0.0, -0.07, 1)
 converted = tf.transformations.concatenate_matrices(
         tf.transformations.translation_matrix(p0),
         tf.transformations.quaternion_matrix(q0)
     )
 
-poses = read_csv("smoothed.csv")
+poses = read_csv("unsmoothed_tmp.csv")
 
+n = 10
 global_poses = PoseArray()
 for i, transform in enumerate(poses):
-    # if i > 100: 
+    # if i > 100:
     #     break
     converted = converted @ transform
     topush = Pose()
     topush.orientation = Quaternion(*tf.transformations.quaternion_from_matrix(converted))
     topush.position = Point(*tf.transformations.translation_from_matrix(converted))
+    
+    if i > 0 and topush.orientation != global_poses.poses[-1].orientation:
+        pose1 = global_poses.poses[-1]
+        q1 = [pose1.orientation.x, pose1.orientation.y, pose1.orientation.z, pose1.orientation.w]
+        q2 = [topush.orientation.x, topush.orientation.y, topush.orientation.z, topush.orientation.w]
+
+        # interpolate positions and orientations separately
+        for i in range(n+1):
+            t = float(i) / float(n+1)  # interpolation factor
+
+            # spherical linear interpolation for orientation
+            q = tf.transformations.quaternion_slerp(q1, q2, t)
+
+            # create a Pose message
+            pose_tmp = Pose()
+            pose_tmp.position.x = topush.position.x
+            pose_tmp.position.y = topush.position.y
+            pose_tmp.position.z = topush.position.z
+            pose_tmp.orientation.x = q[0]
+            pose_tmp.orientation.y = q[1]
+            pose_tmp.orientation.z = q[2]
+            pose_tmp.orientation.w = q[3]
+
+            global_poses.poses.append(pose_tmp)
     global_poses.poses.append(topush)
 
-for pose in global_poses.poses:
+# print(global_poses.poses)
+print(grid)
+for pose in tqdm(global_poses.poses):
+    position = np.array([pose.position.x, pose.position.y])
+    quaternion = (pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w)
+    euler = euler_from_quaternion(quaternion)
+    yaw = euler[2]
+    # update_path(grid, position)
+    update_grid(grid, robot_width, robot_length, position, yaw)
+
+print("Path")
+for pose in tqdm(global_poses.poses):
     position = np.array([pose.position.x, pose.position.y])
     quaternion = (pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w)
     euler = euler_from_quaternion(quaternion)
     yaw = euler[2]
     update_path(grid, position)
-    update_grid(grid, robot_width, robot_length, position, yaw)
+
+cropped = grid[85:390, 115:420]
+
+print(f"Zero: {np.count_nonzero(cropped==0)}")
+print(f"Non zero: {np.count_nonzero(cropped)}")
+print(f"Total: {cropped.size}")
+print(f"Coverage {100 * round(np.count_nonzero(cropped) / cropped.size, 6)}%")
 
 plot_grid(grid)

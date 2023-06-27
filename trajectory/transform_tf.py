@@ -6,7 +6,7 @@ from geometry_msgs.msg import PoseArray, Pose, Quaternion, Point
 import matplotlib.pyplot as plt
 
 
-csvfile = open("smoothed.csv")
+csvfile = open("../data/smoothed.csv")
 csvreader = csv.reader(csvfile)
 header = next(csvreader)
 
@@ -18,9 +18,14 @@ for row in csvreader:
     rows.append(tmp)
 
 # p0 = (-7.96349, 29.8067, 0.0)
-p0 = (5, 40, 0.0)
 # q0 = (0.0, 0.0, -0.044864, 0.998993)
-q0 = (0.0, 0.0, -0.125, 1)
+
+####
+p0 = (5, 40, 0.0)
+q0 = (0.0, 0.0, -0.123, 1)
+####
+
+
 converted = tf.transformations.concatenate_matrices(
         tf.transformations.translation_matrix(p0),
         tf.transformations.quaternion_matrix(q0)
