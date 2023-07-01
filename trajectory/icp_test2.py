@@ -10,7 +10,7 @@ import numpy as np
 from sklearn.neighbors import NearestNeighbors
 import random
 
-smoothed = 0
+smoothed = 1
 
 if smoothed == 1:
     RESULTS_FILE = "../data/smoothed_gtsam_pose.csv"
@@ -19,6 +19,8 @@ if smoothed == 1:
     y1 = 29.0
     it0 = 9
     output_file = "../data/errors_smoothed.csv"
+    output_file_x = "../data/errors_x_smoothed.csv"
+    output_file_y = "../data/errors_y_smoothed.csv"
 else:
     RESULTS_FILE = "../data/unsmoothed_gtsam_pose.csv"
     GT_FILE = "../data/unsmoothed_multiple.csv"
@@ -26,6 +28,8 @@ else:
     y1 = 29.0
     it0 = 0
     output_file = "../data/errors_unsmoothed.csv"
+    output_file_x = "../data/errors_x_unsmoothed.csv"
+    output_file_y = "../data/errors_y_unsmoothed.csv"
 
 desired_length = 2700
 
@@ -145,7 +149,6 @@ def compute_errors(experiment, transformed_ground_truth):
 
     distances, _ = neigh.kneighbors(experiment)
     
-    # we only need the distances, as we are interested in the errors
     return distances.ravel()
 
 def normalize_trajectory(trajectory, first_point=(0,0), it = 0):
@@ -178,6 +181,21 @@ def normalize_trajectory(trajectory, first_point=(0,0), it = 0):
         normalized_trajectory.append((x_new, y_new, theta_new))
 
     return normalized_trajectory
+
+def compute_xy_errors(experiment, transformed_ground_truth):
+    neigh = NearestNeighbors(n_neighbors=1)
+    neigh.fit(transformed_ground_truth)
+
+    _, indices = neigh.kneighbors(experiment)
+    
+    closest_points = np.array(transformed_ground_truth)[indices.flatten()]
+
+    experiment_np = np.array(experiment)
+    
+    x_differences = experiment_np[:, 0] - closest_points[:, 0]
+    y_differences = experiment_np[:, 1] - closest_points[:, 1]
+
+    return x_differences, y_differences
 
 csvfile = open(RESULTS_FILE)
 csvreader = csv.reader(csvfile, delimiter='\t')
@@ -289,3 +307,7 @@ experiment = random_discard(experiment, desired_length)
 
 errors = compute_errors(experiment, gt)
 write_to_file(errors, output_file)
+
+x_err, y_err = compute_xy_errors(experiment, gt)
+write_to_file(x_err, output_file_x)
+write_to_file(y_err, output_file_y)

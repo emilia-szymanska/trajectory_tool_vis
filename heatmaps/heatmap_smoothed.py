@@ -63,12 +63,12 @@ def update_path(grid, position):
     x = np.floor(np.min(position[0], axis=0) / grid_cell_size).astype(int)
     y = np.floor(np.min(position[1], axis=0) / grid_cell_size).astype(int)
     if 0 <= x < grid.shape[0] and 0 <= y < grid.shape[1]:
-        grid[y-4:y+4, x-4:x+4] = 50
+        grid[y-4:y+4, x-4:x+4] = 60
         # grid[y-2:y+2, x-2:x+2] = 50
 
 def plot_grid(grid):
     plt.figure(figsize=(6,6)) # size of the figure
-    plt.imshow(grid, cmap='hot', interpolation='nearest')
+    plt.imshow(grid, cmap='hot', interpolation='nearest', vmin=0, vmax=100, origin='lower')
     plt.colorbar(label='Value') # Display a colorbar
     plt.xlabel('X') # Label for the x-axis
     plt.ylabel('Y') # Label for the y-axis
@@ -93,7 +93,7 @@ converted = tf.transformations.concatenate_matrices(
         tf.transformations.quaternion_matrix(q0)
     )
 
-poses = read_csv("smoothed.csv")
+poses = read_csv("../data/smoothed.csv")
 
 global_poses = PoseArray()
 for i, transform in enumerate(poses):

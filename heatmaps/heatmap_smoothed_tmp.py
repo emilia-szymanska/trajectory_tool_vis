@@ -68,7 +68,7 @@ def update_path(grid, position, max_arr):
 
 def plot_grid(grid):
     plt.figure(figsize=(6,6)) # size of the figure
-    plt.imshow(grid, cmap='hot', interpolation='nearest')
+    plt.imshow(grid, cmap='hot', interpolation='nearest', vmin=0, vmax=75, origin='lower')
     plt.colorbar(label='Value') # Display a colorbar
     plt.xlabel('X') # Label for the x-axis
     plt.ylabel('Y') # Label for the y-axis
@@ -94,7 +94,7 @@ converted = tf.transformations.concatenate_matrices(
         tf.transformations.quaternion_matrix(q0)
     )
 
-poses = read_csv("smoothed_tmp.csv")
+poses = read_csv("../data/smoothed_tmp.csv")
 
 global_poses = PoseArray()
 for i, transform in enumerate(poses):
